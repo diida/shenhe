@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "config.h"
 #include "zmalloc.h"
 #include "array.h"
 void arrayPush(ARRAY *arr,ANODE *node)

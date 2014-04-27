@@ -14,7 +14,6 @@
 #include "ae.h"
 #include "def.h"
 #include "ac.h"
-#include "config.h"
 #include "zmalloc.h"
 
 /**
@@ -53,7 +52,7 @@ RESULT *acPinYinMatch(NODE *root,CLIENT *cl)
 	char word[7];
 	size_t l,wordlen;
 	int i = 0,addr,pi = 0,s=0,find = 0;
-	short map[MAX_BUFFER_LENGTH][3];
+	unsigned short map[MAX_BUFFER_LENGTH][3];
 	RESULT *res,*res_t = NULL ,*p ,*q;
 
 	l = cl->read_len;
@@ -131,7 +130,7 @@ RESULT *acPinYinMatch(NODE *root,CLIENT *cl)
 					p = res;
 				} else {
 					//释放掉重复的空间
-					free(res);
+					zfree(res);
 				}
 
 				//重头开始扫描
@@ -168,7 +167,7 @@ RESULT *acPinYinMatch(NODE *root,CLIENT *cl)
 					p = res;
 				} else {
 					//释放掉重复的空间
-					free(res);
+					zfree(res);
 				}
 
 				//重头开始扫描
@@ -185,7 +184,7 @@ RESULT *acPinYinMatch(NODE *root,CLIENT *cl)
 	return res;
 }
 
-RESULT* acMatch(NODE *root,char *str,int map[][3])
+RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
 {
     int i,s = -1,j,c = 0,find=0,utf8_flag = 0,blank = 0,k,addr,t1,t2,isblank;
 	char *ctmp;
@@ -276,7 +275,7 @@ RESULT* acMatch(NODE *root,char *str,int map[][3])
 					}
 					
 					if(k<=1) {
-						free(rp);
+						zfree(rp);
 						i = s + 1;
 						goto FOUND_END;
 					}
@@ -351,7 +350,7 @@ void printResult(RESULT *res)
 void acFreeResult(RESULT *res)
 {
 	RESULT *p;
-	if(res) {
+	if(res != NULL) {
 		p = res->next;
 		if(p) {
 			acFreeResult(p);

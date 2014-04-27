@@ -22,6 +22,7 @@ function test($str) {
     fwrite($fd, $str, strlen($str));
     $s = '';
     while ($r = fgets($fd, 1024)) {
+		echo 1;
         $s .= $r;
     }
     fclose($fd);
@@ -58,7 +59,8 @@ function test($str) {
 }
 if(OUTPUT) {
     test($argv[2]);
-   test("日 日 毛泽东 av 日日共产党 xxx CC小雪M<(*&*&%&^%$%^$@#$%^)_+_+\"3424");die;
+ //  test("日 日 毛泽东 av 日日共产党 xxx CC小雪M<(*&*&%&^%$%^$@#$%^)_+_+\"3424");die;
+	die;
    }
 //只匹配1个字
 test("泽东");
@@ -77,6 +79,7 @@ test("日 日 毛泽东");
 test("日 日 毛泽东 日日共产党");
 test("日 日 毛泽东 av 日日共产党 xxx CC小雪M<(*&*&%&^%$%^$@#$%^)_+_+\"3424");
 //特殊符号
+die;
 for($i=0;$i<10000;$i++) {
     test("日 日 毛泽东 av 日日共产党 xxx CC小雪M<(*&*&%&^%$%^$@#$%^)_+_+\"3424");
 }

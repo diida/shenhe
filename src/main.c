@@ -7,7 +7,6 @@
 #include "stddef.h"
 #include <netinet/in.h>
 #include <errno.h>
-#include "config.h"
 #include "zmalloc.h"
 #include <pthread.h>
 #include "array.h"
@@ -145,6 +144,7 @@ void clientWriteBuffer(CLIENT *c,char *str)
 void writeToClient(CLIENT *c,char *str)
 {
 	clientWriteBuffer(c,str);
+
 	if (aeCreateFileEvent(c->el,c->fd,AE_WRITABLE,
 		writeResultToClient, c) == AE_ERR)
 	{

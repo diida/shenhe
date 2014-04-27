@@ -81,7 +81,7 @@ static int aeApiAddEvent(aeEventLoop *eventLoop, int fd, int mask) {
         if (kevent(state->kqfd, &ke, 1, NULL, 0, NULL) == -1) return -1;
     }
     if (mask & AE_WRITABLE) {
-        EV_SET(&ke, fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+        EV_SET(&ke, fd, EVFILT_WRITE|EV_ENABLE, EV_ADD, 0, 0, NULL);
         if (kevent(state->kqfd, &ke, 1, NULL, 0, NULL) == -1) return -1;
     }
     return 0;

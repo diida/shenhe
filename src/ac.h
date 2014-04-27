@@ -34,7 +34,7 @@ typedef struct res
 		addr = addr | ((addr_t)str[2] & 0x3F);
 
 NODE *acInit();
-RESULT* acMatch(NODE *root,char *str,int map[][3]);
+RESULT* acMatch(NODE *root,char *str,unsigned short map[][3]);
 RESULT* acPinYinMatch(NODE *root,CLIENT *cl);
 
 void acFillResult(char *result,RESULT *res);
