@@ -15,6 +15,12 @@
 
 #define NOT_FOUND -1
 
+#if __WORDSIZE == 64
+typedef long int addr_t;
+#else
+typedef int	addr_t;
+#endif
+
 typedef struct client{
 	char read_buffer[MAX_BUFFER_LENGTH];
 	char write_buffer[MAX_BUFFER_LENGTH];

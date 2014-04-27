@@ -7,12 +7,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include "stddef.h"
 
 #include "array.h"
 #include "ae.h"
 #include "def.h"
 #include "ac.h"
+#include "zmalloc.h"
 
 /**
  * 初始化拼音的hash表
