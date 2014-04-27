@@ -49,10 +49,16 @@ function test($str) {
         $list = explode("\n", $s);
         array_pop($list);//去掉最后一\n
         foreach ($list as $k => $v) {
-            list($start,$len) = explode(' ',$v);
+            list($start,$len,$replace) = explode(' ',$v);
             $list[$k] = '起始字符:'.$start.' '.substr($str,$start,$len);
+			if($replace) {
+				for($i=$start;$i< $start + $len;$i++) {
+					$str[$i] = '*';
+				}
+			}
         }
         $list['cost'] = $cost;
+        $list['after'] = $str;
         if(OUTPUT)
         print_r($list);
     }

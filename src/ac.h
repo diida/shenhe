@@ -33,9 +33,9 @@ typedef struct res
 		addr = addr << 6;\
 		addr = addr | ((addr_t)str[2] & 0x3F);
 
-NODE *acInit();
+NODE *acInit(char *path,short py,short replace);
 RESULT* acMatch(NODE *root,char *str,unsigned short map[][3]);
-RESULT* acPinYinMatch(NODE *root,CLIENT *cl);
+RESULT* acPinYinMatch(NODE *dict_pinyin,NODE *dict_replace,CLIENT *cl);
 
 void acFillResult(char *result,RESULT *res);
 void acFreeResult(RESULT *res);

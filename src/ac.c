@@ -46,7 +46,50 @@ NODE * childMatch(NODE *p,char c)
 	}
 	return NULL;
 }
-RESULT *acPinYinMatch(NODE *root,CLIENT *cl) 
+
+RESULT *acMergeResult(RESULT *res,RESULT *res_t)
+{
+	RESULT *p ,*q;
+	int find;
+
+	if(res) {
+		if(res_t) {
+			p = res_t;
+			while(res) {
+				find = 0;
+				while(res_t) {
+					if(res_t->pos == res->pos) {
+						find = 1;
+						break;
+					}
+					res_t = res_t->next;
+				}
+				
+				q = res->next;
+				
+				if(find == 0) {
+					res->next = p;
+					p = res;
+				} else {
+					//释放掉重复的空间
+					zfree(res);
+				}
+
+				//重头开始扫描
+				res_t = p;
+				//res指向下一个
+				res = q;
+			}
+			res = p;
+		}		
+	} else {
+		res = res_t;
+	}
+
+	return res;
+}
+
+RESULT* acPinYinMatch(NODE *dict_pinyin,NODE *dict_replace,CLIENT *cl)
 {
 	char *str ,*strpy,*strpy_t,*c,cc;
 	char word[7];
@@ -95,11 +138,16 @@ RESULT *acPinYinMatch(NODE *root,CLIENT *cl)
                 i++;
             }
 		} else {
+			cc = str[i];
+			if(cc > 64 && cc < 91) {
+				cc += 32;
+				str[i] = cc;
+			}
 			map[s][0] = i;
 			map[s][1] = 1;
 			map[s][2] = 1;
 			
-			strpy[s] = str[i];
+			strpy[s] = cc;
 			strpy_t[s] = ' ';
 			pi++;
 			i++;
@@ -107,80 +155,12 @@ RESULT *acPinYinMatch(NODE *root,CLIENT *cl)
 		s = pi;
 	}
 	//printf("%s\n",strpy);
-	res = acMatch(root,strpy,map);
-	res_t = acMatch(root,strpy_t,map);
-	
-	if(res) {
-		if(res_t) {
-			p = res_t;
-			while(res) {
-				find = 0;
-				while(res_t) {
-					if(res_t->pos == res->pos) {
-						find = 1;
-						break;
-					}
-					res_t = res_t->next;
-				}
-				
-				q = res->next;
-				
-				if(find == 0) {
-					res->next = p;
-					p = res;
-				} else {
-					//释放掉重复的空间
-					zfree(res);
-				}
-
-				//重头开始扫描
-				res_t = p;
-				//res指向下一个
-				res = q;
-			}
-			res = p;
-		}		
-	} else {
-		res = res_t;
-	}
-	
+	res = acMatch(dict_pinyin,strpy,map);
+	res_t = acMatch(dict_pinyin,strpy_t,map);
+	res = acMergeResult(res,res_t);
 	//原词
-	res_t = acMatch(root,cl->read_buffer,NULL);
-	
-	if(res) {
-		if(res_t) {
-			p = res_t;
-			while(res) {
-				find = 0;
-				while(res_t) {
-					if(res_t->pos == res->pos) {
-						find = 1;
-						break;
-					}
-					res_t = res_t->next;
-				}
-				
-				q = res->next;
-				
-				if(find == 0) {
-					res->next = p;
-					p = res;
-				} else {
-					//释放掉重复的空间
-					zfree(res);
-				}
-
-				//重头开始扫描
-				res_t = p;
-				//res指向下一个
-				res = q;
-			}
-			res = p;
-		}		
-	} else {
-		res = res_t;
-	}
-	
+	res_t = acMatch(dict_replace,cl->read_buffer,NULL);
+	res = acMergeResult(res,res_t);
 	return res;
 }
 
@@ -188,13 +168,13 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
 {
     int i,s = -1,j,c = 0,find=0,utf8_flag = 0,blank = 0,k,addr,t1,t2,isblank;
 	char *ctmp;
-	intptr_t ic;
+	addr_t ic;
     size_t l;
     NODE *p ,*np,*q;
     p = root;
     RESULT *res = NULL,*rp,*rend;
     l = strlen(str);
-    //printf("%s\n",str);
+ //   printf("%s\n",str);
     for(i = 10;i<= l;i++) {
         if(str[i] & 0x80) {
             ic = -str[i] + 128;
@@ -316,7 +296,7 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
 						utf8_flag = 0;						
 					} else {
                         if(s >-1) {
-                            i = s+1;
+                            i = s;
                         } else {
 						    i--;
                         }
@@ -380,23 +360,27 @@ void acFillResult(char *result,RESULT *res)
     }
 }
 
-NODE *acInit()
+/**
+  * @param path 字典位置
+  * @param py 是否要拼音 
+  */
+NODE *acInit(char *path,short py, short replace)
 {
 	int find ,i,c,addr;
-	intptr_t key;
+	addr_t key;
 	NODE *root,*p ,*queue_header,*queue_end,*q,*fq;
 	root = getNode('\0',NULL);
 	p = root;
  
 	FILE* fp,*fp2;
-	fp = fopen("dict.txt","r");
-	fp2 = fopen("dictpy.txt","w");
+	fp = fopen(path,"r");
+	//fp2 = fopen("dictpy.txt","w");
 	char str[WORD_MAX_LEN];
 	char pinyinTmp[7];
 	char pinyin[WORD_MAX_LEN * 6];
 	char *x,*star="*";
 	acPinyinInit();
-	
+
 	while (!feof(fp)) 
 	{
 		bzero(str,WORD_MAX_LEN);
@@ -416,7 +400,7 @@ NODE *acInit()
 					
 				}
             } else {
-                key = (intptr_t)str[i];
+                key = (addr_t)str[i];
 				pinyinTmp[0] = str[i];
             }
 			strcat(pinyin,pinyinTmp);
@@ -426,19 +410,18 @@ NODE *acInit()
 			p = p->next[key];
 			i++;
 		}
-		
+		if(i == 0) continue;
+		//	printf("%s %s %d\n",path,str,i);
 		p->is_word = 1;
-		if(str[i] == '*') {
-			p->replace = 1;
-		}
+		p->replace = replace;
 		p = root;
-		
+		if(py == 0)continue;
 		//将这一行转为拼音
 		c = 0;
-        fputs(pinyin,fp2);
-        fputc('\n',fp2);
+       // fputs(pinyin,fp2);
+       // fputc('\n',fp2);
 		while(pinyin[c] != '\n' && pinyin[c] != '\0' && pinyin[c] != '\r' && c < WORD_MAX_LEN * 6) {
-			key = (intptr_t)pinyin[c];
+			key = (addr_t)pinyin[c];
 			if(p->next[key] == 0) {
 				p->next[key] = getNode(pinyin[c],p);
 			}
@@ -447,14 +430,12 @@ NODE *acInit()
 		}
 		
 		p->is_word = 1;
-		if(str[i] == '*') {
-			p->replace = 1;
-		}
+		p->replace = replace;
 		p = root;
 	}
 	
     fclose(fp);
-    fclose(fp2);
+    //fclose(fp2);
 	
 	p = queue_header = queue_end = root;
     

@@ -35,3 +35,4 @@ typedef struct client{
 	pthread_attr_t thread_attr;
 	ANODE *owner;
 } CLIENT;
+

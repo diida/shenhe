@@ -36,7 +36,6 @@ int mypow(int x,int y)
 
 pthread_t thread;
 SERVER *server;
-NODE *acRoot;
 
 /**
  * 应该要带配置文件
@@ -52,6 +51,8 @@ SERVER *createServer()
 	bzero(s,sizeof(SERVER));
     s->client = arrayCreate();
     s->thread = arrayCreate();
+	s->dict_replace = acInit("replace.txt",0,1);
+	s->dict_pinyin = acInit("dict.txt",1,0);
 	
     pthread_mutex_init(&s->client_lock,NULL);
     pthread_mutex_init(&s->thread_lock,NULL);
@@ -168,7 +169,7 @@ void *clientThread(void *arg)
 			if(strlen(c->read_buffer) == 0) {
 				writeToClient(c,ERROR_EMPTY_CONTENT);
 			} else {
-				res = acPinYinMatch(acRoot,c);
+				res = acPinYinMatch(server->dict_pinyin,server->dict_replace,c);
 				acFillResult(c->write_buffer,res);
 				acFreeResult(res);
 				writeToClient(c,NULL);
@@ -329,7 +330,6 @@ int main()
 	int port = 8615,fd;
 	aeEventLoop *el = aeCreateEventLoop(MAX_CLIENT);
 	server = createServer();
-	acRoot = acInit();
 	
 	fd = anetTcpServer(err, port, NULL, SHENHE_TCP_BACKLOG);
 	if (aeCreateFileEvent(el, fd, AE_READABLE,

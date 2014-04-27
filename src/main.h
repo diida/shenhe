@@ -15,8 +15,11 @@ typedef struct shenhe_server
 	
     ARRAY *client;
 	pthread_mutex_t client_lock;
+	NODE *dict_pinyin;
+	NODE *dict_replace;
 } SERVER;
 
 void readFromClient(aeEventLoop *el,int fd);
 void writeResultToClient(aeEventLoop *el, int fd, void *privdata, int mask);
 void *clientThread(void *arg);
+
