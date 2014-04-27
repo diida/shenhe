@@ -20,5 +20,5 @@ clean:
 
 #编译依赖库
 #jemalloc 内存分配
-jemalloc:../deps/jemalloc/lib/libjemalloc.a
+jemalloc:
 	cd ../deps/ && make $@
