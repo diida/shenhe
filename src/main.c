@@ -7,7 +7,7 @@
 #include "stddef.h"
 #include <netinet/in.h>
 #include <errno.h>
-#include <malloc.h>
+#include "zmalloc.h"
 #include <pthread.h>
 #include "array.h"
 #include "def.h"
@@ -48,7 +48,7 @@ SERVER *createServer()
 	THREAD *t;
 	ANODE *node;
 	
-	SERVER *s = (SERVER *)malloc(sizeof(SERVER));
+	SERVER *s = (SERVER *)zmalloc(sizeof(SERVER));
 	bzero(s,sizeof(SERVER));
     s->client = arrayCreate();
     s->thread = arrayCreate();
@@ -57,7 +57,7 @@ SERVER *createServer()
     pthread_mutex_init(&s->thread_lock,NULL);
 	
     for(;i<MAX_THREAD_NUM;i++) {
-		t = (THREAD *)malloc(sizeof(THREAD));    
+		t = (THREAD *)zmalloc(sizeof(THREAD));    
 		pthread_mutex_init(&t->thread_lock,NULL);
 		pthread_cond_init(&t->thread_ready,NULL);
 		
@@ -68,7 +68,7 @@ SERVER *createServer()
     }
 	
     for(i = 0;i<MAX_CLIENT_NUM;i++) {
-        c = (CLIENT *)malloc(sizeof(CLIENT));       
+        c = (CLIENT *)zmalloc(sizeof(CLIENT));       
 		node = arrayNodeCreate(0,c);
 		c->owner = node;
         arrayPush(s->client, node);
@@ -81,7 +81,6 @@ void freeClient(CLIENT *c)
 	aeDeleteFileEvent(c->el,c->fd,AE_READABLE);
 	aeDeleteFileEvent(c->el,c->fd,AE_WRITABLE);
 	close(c->fd);
-	//free(c);
 	//返还客户端
 	pthread_mutex_lock(&server->client_lock);
 	arrayPush(server->client,c->owner);
@@ -293,7 +292,7 @@ void initClient(CLIENT *c)
 void readFromClient(aeEventLoop *el,int fd)
 {
 	
-	//CLIENT *c = (CLIENT *)malloc(sizeof(CLIENT));
+	//CLIENT *c = (CLIENT *)zmalloc(sizeof(CLIENT));
 	//选择一个预先申请好的客户端
 	CLIENT *c;
 	ANODE *node;

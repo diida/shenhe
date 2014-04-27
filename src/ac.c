@@ -391,7 +391,7 @@ NODE *acInit()
 	char str[WORD_MAX_LEN];
 	char pinyinTmp[7];
 	char pinyin[WORD_MAX_LEN * 6];
-	char *x,*star='*';
+	char *x,*star="*";
 	acPinyinInit();
 	
 	while (!feof(fp)) 

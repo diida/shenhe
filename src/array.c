@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <malloc.h>
+#include "zmalloc.h"
 #include "array.h"
 void arrayPush(ARRAY *arr,ANODE *node)
 {
@@ -64,28 +64,28 @@ ANODE *arrayShift(ARRAY *arr)
 
 ARRAY * arrayCreate()
 {
-    ARRAY *arr = (ARRAY *) malloc(sizeof(ARRAY));
-    arr->length = 0;
-    arr->head = arr->end = NULL;
-    return arr;
-}
+		ARRAY *arr = (ARRAY *)zmalloc(sizeof(ARRAY));
+		arr->length = 0;
+		arr->head = arr->end = NULL;
+		return arr;
+	}
 
-ANODE *arrayNodeCreate(int val,void *data)
-{
-    ANODE *n= (struct array_node *)malloc(sizeof(struct array_node));    
-    n->val = val;
-    n->data = data;
-    return n;
-}
+	ANODE *arrayNodeCreate(int val,void *data)
+	{
+		ANODE *n= (struct array_node *)zmalloc(sizeof(struct array_node));    
+		n->val = val;
+		n->data = data;
+		return n;
+	}
 
-/*
-typedef struct t{
-    int c;
-} T;
-struct array_node *tmp(int i)
-{
-    ANODE *n= (struct array_node *)malloc(sizeof(struct array_node));
-    T *t = (T*)malloc(sizeof(T));
+	/*
+	typedef struct t{
+		int c;
+	} T;
+	struct array_node *tmp(int i)
+	{
+		ANODE *n= (struct array_node *)malloc(sizeof(struct array_node));
+		T *t = (T*)malloc(sizeof(T));
     t->c = i;
     n->data =t;
     n->val = i;
