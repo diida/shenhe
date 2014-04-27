@@ -14,6 +14,7 @@
 #include "ae.h"
 #include "def.h"
 #include "ac.h"
+#include "config.h"
 #include "zmalloc.h"
 
 /**
@@ -25,7 +26,7 @@ char acPinyinList[65536][7];
 NODE *getNode(char c,NODE *parent)
 {
 	NODE *p;
-	p = (NODE*)malloc(sizeof(NODE));
+	p = zmalloc(sizeof(NODE));
 	bzero(p,sizeof(NODE));
 	p->v = c;
 	p->replace = 0;
@@ -46,19 +47,21 @@ NODE * childMatch(NODE *p,char c)
 	}
 	return NULL;
 }
-RESULT* acPinYinMatch(NODE *root,CLIENT *cl) 
+RESULT *acPinYinMatch(NODE *root,CLIENT *cl) 
 {
-	char *str = cl->read_buffer;
-	size_t l = cl->read_len,wordlen;
-	int i = 0,addr,map[MAX_BUFFER_LENGTH][3],pi = 0,s=0,find = 0;
-	char *strpy = cl->strpy1;//6倍数的拼音
-	char *strpy_t = cl->strpy2;//6倍数的拼音
+	char *str ,*strpy,*strpy_t,*c,cc;
+	char word[7];
+	size_t l,wordlen;
+	int i = 0,addr,pi = 0,s=0,find = 0;
+	short map[MAX_BUFFER_LENGTH][3];
 	RESULT *res,*res_t = NULL ,*p ,*q;
-	
+
+	l = cl->read_len;
+	strpy = cl->strpy1;//6倍数的拼音
+	strpy_t = cl->strpy2;//6倍数的拼音
+	str = cl->read_buffer;
 	bzero(strpy,l * 6);
 	bzero(strpy_t,l * 6);
-	char *c ,cc;
-	char word[7];
 	while(i < l) {
 		c = &str[i];
 		if(c[0] & 0x80) {
@@ -178,6 +181,7 @@ RESULT* acPinYinMatch(NODE *root,CLIENT *cl)
 	} else {
 		res = res_t;
 	}
+	
 	return res;
 }
 
@@ -207,7 +211,7 @@ RESULT* acMatch(NODE *root,char *str,int map[][3])
             }
         } else {
 			utf8_flag = 0;
-            ic = (intptr_t)str[i];
+            ic = (addr_t)str[i];
         }
 		utf8_flag && utf8_flag--;
         if(p && (p->next[ic] != 0 || (((ic < 65) || (ic > 90 && ic < 97) || (ic > 122 && ic < 128)) && c) ) && i!=l) {
@@ -247,7 +251,7 @@ RESULT* acMatch(NODE *root,char *str,int map[][3])
             if(find) {
                 FOUND:
 	//		    printf("%d + %d + %d + %d + %d + %d\n",i,c,s,utf8_flag,find,blank);
-                rp =(RESULT *)malloc(sizeof(RESULT));
+                rp = zmalloc(sizeof(RESULT));
                 bzero(rp,sizeof(RESULT));
                 
                 rp->next = NULL;
@@ -352,7 +356,7 @@ void acFreeResult(RESULT *res)
 		if(p) {
 			acFreeResult(p);
 		}
-		free(res);
+		zfree(res);
 	}
 }
 
@@ -503,7 +507,7 @@ NODE *acInit()
 		
 void acPinyinInit()
 {
-	FILE* fp;
+	FILE *fp;
 	int addr,i;
 	fp = fopen("pinyin.txt","r");
 	char str[16];

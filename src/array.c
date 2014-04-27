@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "config.h"
 #include "zmalloc.h"
 #include "array.h"
 void arrayPush(ARRAY *arr,ANODE *node)
@@ -64,7 +65,7 @@ ANODE *arrayShift(ARRAY *arr)
 
 ARRAY * arrayCreate()
 {
-		ARRAY *arr = (ARRAY *)zmalloc(sizeof(ARRAY));
+		ARRAY *arr = zmalloc(sizeof(ARRAY));
 		arr->length = 0;
 		arr->head = arr->end = NULL;
 		return arr;
@@ -72,7 +73,7 @@ ARRAY * arrayCreate()
 
 	ANODE *arrayNodeCreate(int val,void *data)
 	{
-		ANODE *n= (struct array_node *)zmalloc(sizeof(struct array_node));    
+		ANODE *n= zmalloc(sizeof(struct array_node));    
 		n->val = val;
 		n->data = data;
 		return n;

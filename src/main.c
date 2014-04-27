@@ -7,6 +7,7 @@
 #include "stddef.h"
 #include <netinet/in.h>
 #include <errno.h>
+#include "config.h"
 #include "zmalloc.h"
 #include <pthread.h>
 #include "array.h"
@@ -48,7 +49,7 @@ SERVER *createServer()
 	THREAD *t;
 	ANODE *node;
 	
-	SERVER *s = (SERVER *)zmalloc(sizeof(SERVER));
+	SERVER *s = zmalloc(sizeof(SERVER));
 	bzero(s,sizeof(SERVER));
     s->client = arrayCreate();
     s->thread = arrayCreate();
@@ -57,7 +58,7 @@ SERVER *createServer()
     pthread_mutex_init(&s->thread_lock,NULL);
 	
     for(;i<MAX_THREAD_NUM;i++) {
-		t = (THREAD *)zmalloc(sizeof(THREAD));    
+		t = zmalloc(sizeof(THREAD));    
 		pthread_mutex_init(&t->thread_lock,NULL);
 		pthread_cond_init(&t->thread_ready,NULL);
 		
@@ -68,7 +69,7 @@ SERVER *createServer()
     }
 	
     for(i = 0;i<MAX_CLIENT_NUM;i++) {
-        c = (CLIENT *)zmalloc(sizeof(CLIENT));       
+        c = zmalloc(sizeof(CLIENT));       
 		node = arrayNodeCreate(0,c);
 		c->owner = node;
         arrayPush(s->client, node);
@@ -156,19 +157,18 @@ void *clientThread(void *arg)
 {
 	THREAD *t = (THREAD *) arg;
 	CLIENT *c;
+	RESULT *res;
 	pthread_mutex_lock(&t->thread_lock);
 	
 	while(1) {	
 		pthread_cond_wait(&t->thread_ready,&t->thread_lock);
-		
 		c = t->c;
 		if(c != NULL) {
 			//读取长度
 			if(strlen(c->read_buffer) == 0) {
 				writeToClient(c,ERROR_EMPTY_CONTENT);
 			} else {
-				//RESULT *res = acMatch(acRoot,c->read_buffer);
-				RESULT *res = acPinYinMatch(acRoot,c);
+				res = acPinYinMatch(acRoot,c);
 				acFillResult(c->write_buffer,res);
 				acFreeResult(res);
 				writeToClient(c,NULL);
@@ -335,7 +335,7 @@ int main()
 	if (aeCreateFileEvent(el, fd, AE_READABLE,
             acceptTcpHandler,NULL) == AE_ERR)
             {
-                printf("Unrecoverable error creating fd file event \n");
+                printf("Unrecoverable error creating fd file event %d\n",fd);
 				return 1;
             }
 	printf("Server start %d\n" ,fd);
