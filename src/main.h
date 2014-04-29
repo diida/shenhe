@@ -14,9 +14,12 @@ typedef struct shenhe_server
 	pthread_mutex_t thread_lock;
 	
     ARRAY *client;
+    ARRAY *clientWait;//等待处理的客户端队列
 	pthread_mutex_t client_lock;
+	pthread_mutex_t client_wait_lock;
 	NODE *dict_pinyin;
 	NODE *dict_replace;
+	short reload;//重新加载配置
 } SERVER;
 
 void readFromClient(aeEventLoop *el,int fd);

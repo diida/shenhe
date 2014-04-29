@@ -12,10 +12,16 @@ $totalCost = 0;
 function test($str) {
     global $faild;
     global $totalCost ;
-    $len = strlen($str) + 10;
+	global $argv;
+    $len = strlen($str) + 12;
     $len = str_pad($len, 10, "0", STR_PAD_LEFT);
-    $str = $len . $str;
+	if($argv[1] == 2) {
+		$str = $len ."01". $str;
+	} else {
+		$str = $len ."00". $str;
+	}
 
+	echo $str;
     //$fd = fsockopen('192.168.137.128', 8615);
     $fd = fsockopen('127.0.0.1', 8615);
     $start = microtime(1);

@@ -31,6 +31,7 @@ typedef struct client{
 	aeEventLoop *el;
 	int read_len;
 	int fd;
+	int cmd;
 	pthread_t thread;
 	pthread_attr_t thread_attr;
 	ANODE *owner;

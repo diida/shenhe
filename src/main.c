@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <strings.h>
 #include <string.h>
 #include "ae.h"
@@ -53,6 +55,7 @@ SERVER *createServer()
     s->thread = arrayCreate();
 	s->dict_replace = acInit("replace.txt",0,1);
 	s->dict_pinyin = acInit("dict.txt",1,0);
+	s->reload = 0;
 	
     pthread_mutex_init(&s->client_lock,NULL);
     pthread_mutex_init(&s->thread_lock,NULL);
@@ -185,14 +188,70 @@ void *clientThread(void *arg)
 	}
 }
 
+int checkThreadIdle(struct aeEventLoop *eventLoop, long long id, void *clientData)
+{
+	pthread_mutex_lock(&server->thread_lock);
+	if(server->thread->length == MAX_THREAD_NUM) {
+		pthread_mutex_unlock(&server->thread_lock);
+		return AE_NOMORE;
+	}
+	pthread_mutex_unlock(&server->thread_lock);
+	return 0;
+}
+
+/**
+  * 重新载入字典
+  */
+void reload(aeEventLoop *el,void *privdata)
+{
+	CLIENT *c = (CLIENT *) privdata;
+	freeClient(c);
+	printf("reload\n");
+	server->reload = 0;
+}
+
+/**
+  * 检测指令，如果是普通指令00 返回0 
+  */
+int commands(CLIENT *c)
+{
+	int i = 1,num = 0;
+	for(;i>0;i--) {
+		num += (c->read_buffer[10+i]- 48) *  mypow(10 , (1 - i));
+	}
+	c->cmd = num;
+	printf("cmd:%d\n",num);
+	if(num == 1 && server->reload == 0) {
+		if ((i = aeCreateTimeEvent(c->el, 10,
+					checkThreadIdle,c,reload)) == AE_ERR)
+		{
+			//printf("Unrecoverable error creating time event \n");
+		} else {
+			server->reload = 1;
+		}
+
+	}
+	return num;
+}
+
 void commandProcess(CLIENT *c)
 {
 	THREAD *t;
 	ANODE *node;
+	//检测指令
+	if(commands(c)) {
+		return;
+	}
+
+	//服务器正在重新初始化配置
+	if(server->reload) {
+		arrayUnshift(server->clientWait,c->owner);
+		return;
+	}
+
 	pthread_mutex_lock(&server->thread_lock);
 	node = arrayShift(server->thread);
 	pthread_mutex_unlock(&server->thread_lock);
-
 	if(node == NULL) {
 		writeToClient(c,"097 没有足够的线程处理");	
 	} else {
@@ -221,7 +280,7 @@ void writeResultToClient(aeEventLoop *el, int fd, void *privdata, int mask)
 		c->unsend_len -= nwrite;
 
 		if(c->unsend_len > 0) {
-			//printf("writelen: %d unsend %d errno:%d\n",nwrite,c->unsend_len,errno);
+			//printf("writelend unsend %d errno:%d\n",nwrite,c->unsend_len,errno);
 			return;
 		}
 	}
@@ -251,7 +310,6 @@ void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask)
 					freeClient(c);
 					return ;
 				}
-				//printf("len : %d",len);
 				c->read_len = len;
 			}
 		}
@@ -261,7 +319,6 @@ void readQueryFromClient(aeEventLoop *el, int fd, void *privdata, int mask)
 		}
 		errno = 0;
 		nread = read(fd, c->read_buffer + readlen, SHENHE_IOBUF_LEN);
-		//printf("nread:%d readlen:%d errno:%d\n",nread,readlen,errno);
 	}
 	
 	if (nread == -1) {
@@ -290,6 +347,9 @@ void initClient(CLIENT *c)
 	c->unsend_len = 0;
 }
 
+/**
+  * 申请一个客户端 并且准备接收数据
+  */
 void readFromClient(aeEventLoop *el,int fd)
 {
 	
@@ -319,15 +379,37 @@ void readFromClient(aeEventLoop *el,int fd)
 	}
 }
 
-void initThread()
+void savePid()
 {
-    //初始化客户端
+	pid_t pid = getpid();
+	char strPid[16];
+	FILE *fp = fopen("main.pid","w");
+	if(fp) {
+		bzero(strPid,16);
+		sprintf(strPid,"%d",pid);
+		fputs(strPid,fp);
+		fclose(fp);
+	}
 }
 
 int main()
 {
 	char *err;
 	int port = 8615,fd;
+	pid_t child ;
+/*
+	if((child = fork()) < 0) {
+		printf("fork faild!\n");
+		exit(1);
+	}
+
+	if(child != 0) {
+		exit(0);	
+	}
+	
+	setsid();
+	savePid();
+	*/
 	aeEventLoop *el = aeCreateEventLoop(MAX_CLIENT);
 	server = createServer();
 	
