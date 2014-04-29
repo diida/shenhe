@@ -1,4 +1,4 @@
-L=-lm -lpthread
+L=-lm -pthread
 CC=gcc
 # Default allocator
 I = -DUSE_JEMALLOC -I../deps/jemalloc/include
