@@ -217,7 +217,7 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
 				c++;
 			}           
 			
-//		printf("%d = %d = %d = %d = %d = %d\n",i,c,s,utf8_flag,find,blank);
+		//printf("%d = %d = %d = %d = %d = %d\n",i,c,s,utf8_flag,find,blank);
             if(np->is_word) {
                 find = c;
 				q = np;
@@ -227,10 +227,10 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
             
             p = np;
         } else {
-//		printf("%d - %d - %d - %d - %d - %d\n",i,c,s,utf8_flag,find,blank);
+		//printf("%d - %d - %d - %d - %d - %d\n",i,c,s,utf8_flag,find,blank);
             if(find) {
                 FOUND:
-//		    printf("%d + %d + %d + %d + %d + %d\n",i,c,s,utf8_flag,find,blank);
+		    //printf("%d + %d + %d + %d + %d + %d\n",i,c,s,utf8_flag,find,blank);
                 rp = zmalloc(sizeof(RESULT));
                 bzero(rp,sizeof(RESULT));
                 
@@ -424,7 +424,13 @@ NODE *acInit(char *path,short py, short replace)
        // fputs(pinyin,fp2);
        // fputc('\n',fp2);
 		while(pinyin[c] != '\n' && pinyin[c] != '\0' && pinyin[c] != '\r' && c < WORD_MAX_LEN * 6) {
-			key = (addr_t)pinyin[c];
+            if(pinyin[c] & 0x80) {
+                key = -pinyin[c] + 128;
+                key = ( key == 256 ? 128 : key);
+            } else {
+			    key = (addr_t)pinyin[c];
+            }
+
 			if(p->next[key] == 0) {
 				p->next[key] = getNode(pinyin[c],p);
 			}
