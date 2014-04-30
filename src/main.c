@@ -450,7 +450,7 @@ int main()
     char *err;
     int port = 8615,fd;
     pid_t child ;
-    
+   /*
        if((child = fork()) < 0) {
        printf("fork faild!\n");
        exit(1);
@@ -462,7 +462,7 @@ int main()
 
        setsid();
        savePid();
-    
+   */
     aeEventLoop *el = aeCreateEventLoop(MAX_CLIENT);
     server = createServer();
 

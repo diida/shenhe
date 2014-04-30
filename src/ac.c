@@ -194,8 +194,8 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
             ic = (addr_t)str[i];
         }
 		utf8_flag && utf8_flag--;
-        if(p && (p->next[ic] != 0 || (((ic < 65) || (ic > 90 && ic < 97) || (ic > 122 && ic < 128)) && c) ) && i!=l) {
-			isblank = (ic < 65) || (ic > 90 && ic < 97) || (ic > 122 && ic < 128);
+        if(p && (p->next[ic] != 0 || (((ic < 65) || (ic > 90 && ic < 97) || (ic > 122 && ic < 128)) && c && map!=NULL) ) && i!=l) {
+			isblank = ((ic < 65) || (ic > 90 && ic < 97) || (ic > 122 && ic < 128)) && map!=NULL;
 			if(isblank) {
 				blank++;
 			} else {
@@ -217,7 +217,7 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
 				c++;
 			}           
 			
-	//	printf("%d = %d = %d = %d = %d = %d\n",i,c,s,utf8_flag,find,blank);
+//		printf("%d = %d = %d = %d = %d = %d\n",i,c,s,utf8_flag,find,blank);
             if(np->is_word) {
                 find = c;
 				q = np;
@@ -227,10 +227,10 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
             
             p = np;
         } else {
-	//	printf("%d - %d - %d - %d - %d - %d\n",i,c,s,utf8_flag,find,blank);
+//		printf("%d - %d - %d - %d - %d - %d\n",i,c,s,utf8_flag,find,blank);
             if(find) {
                 FOUND:
-	//	    printf("%d + %d + %d + %d + %d + %d\n",i,c,s,utf8_flag,find,blank);
+//		    printf("%d + %d + %d + %d + %d + %d\n",i,c,s,utf8_flag,find,blank);
                 rp = zmalloc(sizeof(RESULT));
                 bzero(rp,sizeof(RESULT));
                 
