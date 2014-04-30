@@ -40,3 +40,4 @@ RESULT* acPinYinMatch(NODE *dict_pinyin,NODE *dict_replace,CLIENT *cl);
 void acFillResult(char *result,RESULT *res);
 void acFreeResult(RESULT *res);
 void acPinyinInit();
+void acDeleteDict(NODE *dict);

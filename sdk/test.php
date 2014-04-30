@@ -21,14 +21,13 @@ function test($str) {
 		$str = $len ."00". $str;
 	}
 
-	echo $str;
+//	echo $str;
     //$fd = fsockopen('192.168.137.128', 8615);
     $fd = fsockopen('127.0.0.1', 8615);
     $start = microtime(1);
     fwrite($fd, $str, strlen($str));
     $s = '';
     while ($r = fgets($fd, 1024)) {
-		echo 1;
         $s .= $r;
     }
     fclose($fd);
@@ -91,7 +90,6 @@ test("日 日 毛泽东");
 test("日 日 毛泽东 日日共产党");
 test("日 日 毛泽东 av 日日共产党 xxx CC小雪M<(*&*&%&^%$%^$@#$%^)_+_+\"3424");
 //特殊符号
-die;
 for($i=0;$i<10000;$i++) {
     test("日 日 毛泽东 av 日日共产党 xxx CC小雪M<(*&*&%&^%$%^$@#$%^)_+_+\"3424");
 }

@@ -73,6 +73,7 @@ RESULT *acMergeResult(RESULT *res,RESULT *res_t)
 				} else {
 					//释放掉重复的空间
 					zfree(res);
+ //                   printf("freeRepeat\n");
 				}
 
 				//重头开始扫描
@@ -175,7 +176,7 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
     RESULT *res = NULL,*rp,*rend;
     l = strlen(str);
  //   printf("%s\n",str);
-    for(i = 10;i<= l;i++) {
+    for(i = 12;i<= l;i++) {
         if(str[i] & 0x80) {
             ic = -str[i] + 128;
             ic = (ic == 256 ? 128 : ic);
@@ -229,7 +230,7 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
 	//	printf("%d - %d - %d - %d - %d - %d\n",i,c,s,utf8_flag,find,blank);
             if(find) {
                 FOUND:
-	//		    printf("%d + %d + %d + %d + %d + %d\n",i,c,s,utf8_flag,find,blank);
+	//	    printf("%d + %d + %d + %d + %d + %d\n",i,c,s,utf8_flag,find,blank);
                 rp = zmalloc(sizeof(RESULT));
                 bzero(rp,sizeof(RESULT));
                 
@@ -256,6 +257,7 @@ RESULT* acMatch(NODE *root,char *str,unsigned short map[][3])
 					
 					if(k<=1) {
 						zfree(rp);
+ //                       printf("freeSingleWord\n");
 						i = s + 1;
 						goto FOUND_END;
 					}
@@ -336,6 +338,7 @@ void acFreeResult(RESULT *res)
 			acFreeResult(p);
 		}
 		zfree(res);
+ //       printf("freeResult\n");
 	}
 }
 
@@ -507,4 +510,18 @@ void acPinyinInit()
 		}
 	}
 	fclose(fp);
+}
+
+void acDeleteDict(NODE *dict)
+{
+    NODE *p,*q;
+    int i = 0;
+    p = dict;
+    while(p) {
+        i++;
+        q = p->back;
+        zfree(p);
+        //printf("free\n");
+        p = q;
+    }
 }
