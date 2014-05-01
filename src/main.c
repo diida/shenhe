@@ -182,7 +182,6 @@ void *clientThread(void *arg)
 				writeToClient(c,ERROR_EMPTY_CONTENT);
 			} else {
 				res = acPinYinMatch(server->dict_pinyin,server->dict_replace,c);
-				sleep(5);
 				acFillResult(c->write_buffer,res);
 				acFreeResult(res);
 				writeToClient(c,NULL);
