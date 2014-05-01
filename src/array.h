@@ -12,9 +12,9 @@ typedef struct array
     ANODE *end;
     int length;
 } ARRAY;
-void arrayUnshift(ARRAY *arr,ANODE *node);
-ANODE *arrayShift(ARRAY *arr);
-void arrayPush(ARRAY *arr,ANODE *node);
-ANODE *arrayPop(ARRAY *arr);
+void arrayUnshift(ARRAY *arr,ANODE *node,pthread_mutex_t *lock);
+ANODE *arrayShift(ARRAY *arr,pthread_mutex_t *lock);
+void arrayPush(ARRAY *arr,ANODE *node,pthread_mutex_t *lock);
+ANODE *arrayPop(ARRAY *arr,pthread_mutex_t *lock);
 ARRAY *arrayCreate();
 ANODE *arrayNodeCreate(int val,void *data);

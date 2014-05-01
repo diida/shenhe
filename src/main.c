@@ -57,6 +57,7 @@ SERVER *createServer()
 	s->dict_replace = acInit("replace.txt",0,1);
 	s->dict_pinyin = acInit("dict.txt",1,0);
 	s->reload = 0;
+	s->accept_num = 0;
 	
     pthread_mutex_init(&s->client_lock,NULL);
     pthread_mutex_init(&s->thread_lock,NULL);
@@ -69,14 +70,14 @@ SERVER *createServer()
 		pthread_create(&t->thread,NULL,clientThread,t);
 		node = arrayNodeCreate(0,t);
 		t->owner = node;
-		arrayPush(s->thread,node);
+		arrayPush(s->thread,node,NULL);
     }
 	
     for(i = 0;i<MAX_CLIENT_NUM;i++) {
         c = zmalloc(sizeof(CLIENT));       
 		node = arrayNodeCreate(0,c);
 		c->owner = node;
-        arrayPush(s->client, node);
+        arrayPush(s->client, node,NULL);
     }
 	return s;
 }
@@ -87,9 +88,7 @@ void freeClient(CLIENT *c)
 	aeDeleteFileEvent(c->el,c->fd,AE_WRITABLE);
 	close(c->fd);
 	//返还客户端
-	pthread_mutex_lock(&server->client_lock);
-	arrayPush(server->client,c->owner);
-	pthread_mutex_unlock(&server->client_lock);
+	arrayPush(server->client,c->owner,&server->client_lock);
 }
 //内网访问限制
 int validIp(char *ip)
@@ -117,7 +116,16 @@ void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask) {
         printf("Accepting client connection: %s\n",cip);
         return;
     }
-    //printf("%s:%d FD:%d \n", cip, cport,cfd);
+	
+	server->accept_num++;
+	/*
+    printf("num:%d %s:%d FD:%d ThreadIdal:%d ClientIdal:%d ClientWait:%d\n",
+			server->accept_num, cip, cport,cfd,
+			server->thread->length,
+			server->client->length,
+			server->clientWait->length
+			);
+	*/		
 	//是否内网访问
 	if(!validIp(cip)) {
 		close(cfd);
@@ -174,6 +182,7 @@ void *clientThread(void *arg)
 				writeToClient(c,ERROR_EMPTY_CONTENT);
 			} else {
 				res = acPinYinMatch(server->dict_pinyin,server->dict_replace,c);
+				sleep(5);
 				acFillResult(c->write_buffer,res);
 				acFreeResult(res);
 				writeToClient(c,NULL);
@@ -181,11 +190,8 @@ void *clientThread(void *arg)
 		}
 
 		//返回队列
-		pthread_mutex_lock(&server->thread_lock);
-		arrayPush(server->thread,t->owner);
-		pthread_mutex_unlock(&server->thread_lock);
+		arrayPush(server->thread,t->owner,&server->thread_lock);
 		//释放锁继续等待
-		//pthread_mutex_unlock(&t->thread_lock);
 	}
 }
 
@@ -224,15 +230,13 @@ int checkClientWait(struct aeEventLoop *eventLoop, long long id, void *clientDat
     ANODE *node;
     THREAD *t;
     if(server->reload || server->clientWait->length == 0) {
-        return 10;
+        return 1;
     }
-    printf("waitClient\n");
+
     do{
         if(c) {
             //唤醒一个线程来操作
-            pthread_mutex_lock(&server->thread_lock);
-            node = arrayShift(server->thread);
-            pthread_mutex_unlock(&server->thread_lock);
+            node = arrayShift(server->thread,&server->thread_lock);
             if(node) {
                 t = (THREAD *)node->data;
                 t->c = c;
@@ -240,22 +244,20 @@ int checkClientWait(struct aeEventLoop *eventLoop, long long id, void *clientDat
                 pthread_cond_signal(&t->thread_ready);
             } else {
                 //返还客户端节点
-                pthread_mutex_lock(&server->client_wait_lock);
-                arrayUnshift(server->clientWait,c->owner);
-                pthread_mutex_unlock(&server->client_wait_lock);
+                arrayUnshift(server->clientWait,c->owner,&server->client_wait_lock);
+				//等1毫秒后再试试
+				return 1;
             }
         }
         c = NULL;
-        pthread_mutex_lock(&server->client_wait_lock);
-        node = arrayPop(server->clientWait);
-        pthread_mutex_unlock(&server->client_wait_lock);
+        node = arrayPop(server->clientWait,&server->client_wait_lock);
 
         if(node) {
             c = (CLIENT *)node->data;
         }
 
     } while(c);
-    return 10;
+    return 1;
 }
 
 
@@ -279,11 +281,17 @@ int commands(CLIENT *c)
             server->reload = 1;
         }
 
-    }
-
-    if(num != 0) {
         writeToClient(c,"100");
-    }
+    } else if(num == 2) {
+		sprintf(c->write_buffer,"100 ThreadIdal:%d ClientIdal:%d ClientWait:%d",
+				server->thread->length,
+				server->client->length,
+				server->clientWait->length
+				);
+		writeToClient(c,NULL);
+	} else {
+	
+	}
 
     return num;
 }
@@ -299,15 +307,12 @@ void commandProcess(CLIENT *c)
 
     //服务器正在重新初始化配置
     if(server->reload) {
-        arrayUnshift(server->clientWait,c->owner);
+        arrayUnshift(server->clientWait,c->owner,&server->client_wait_lock);
         return;
     }
-
-    pthread_mutex_lock(&server->thread_lock);
-    node = arrayShift(server->thread);
-    pthread_mutex_unlock(&server->thread_lock);
+    node = arrayShift(server->thread,&server->thread_lock);
     if(node == NULL) {
-        writeToClient(c,"097 没有足够的线程处理");	
+        arrayUnshift(server->clientWait,c->owner,&server->client_wait_lock);
     } else {
         t = (THREAD *)node->data;
         //修改客户端数据
@@ -334,7 +339,7 @@ void writeResultToClient(aeEventLoop *el, int fd, void *privdata, int mask)
         c->unsend_len -= nwrite;
 
         if(c->unsend_len > 0) {
-            //printf("writelend unsend %d errno:%d\n",nwrite,c->unsend_len,errno);
+           // printf("writelend unsend %d errno:%d\n",nwrite,c->unsend_len,errno);
             return;
         }
     }
@@ -410,9 +415,7 @@ void readFromClient(aeEventLoop *el,int fd)
     //选择一个预先申请好的客户端
     CLIENT *c;
     ANODE *node;
-    pthread_mutex_lock(&server->client_lock);
-    node = arrayShift(server->client);
-    pthread_mutex_unlock(&server->client_lock);
+    node = arrayShift(server->client,&server->client_lock);
 
     if(node == NULL) {
         //客户端数量不够
@@ -450,7 +453,7 @@ int main()
     char *err;
     int port = 8615,fd;
     pid_t child ;
-   /*
+   
        if((child = fork()) < 0) {
        printf("fork faild!\n");
        exit(1);
@@ -462,7 +465,7 @@ int main()
 
        setsid();
        savePid();
-   */
+   
     aeEventLoop *el = aeCreateEventLoop(MAX_CLIENT);
     server = createServer();
 
@@ -474,7 +477,7 @@ int main()
         return 1;
     }
     //检查等待队列中是否有客户端 
-    if ((aeCreateTimeEvent(el, 10,
+    if ((aeCreateTimeEvent(el, 1,
                     checkClientWait,NULL,NULL)) == AE_ERR)
     {
         //printf("Unrecoverable error creating time event \n");

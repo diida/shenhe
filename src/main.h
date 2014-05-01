@@ -20,6 +20,7 @@ typedef struct shenhe_server
 	NODE *dict_pinyin;
 	NODE *dict_replace;
 	short reload;//重新加载配置
+	long accept_num;
 } SERVER;
 
 void readFromClient(aeEventLoop *el,int fd);

@@ -1,9 +1,9 @@
-#define SHENHE_TCP_BACKLOG       511     /* TCP listen backlog */
+#define SHENHE_TCP_BACKLOG			511     /* TCP listen backlog */
 #define SHENHE_IOBUF_LEN         (1024*16)
 
 #define MAX_CLIENT      10000
 #define MAX_BUFFER_LENGTH      65535
-#define MAX_THREAD_NUM      16
+#define MAX_THREAD_NUM      2
 #define MAX_CLIENT_NUM      32
 #define REDIS_NOTUSED(V) ((void) V)
 #define ERROR_TOO_MANY_THREAD "097"

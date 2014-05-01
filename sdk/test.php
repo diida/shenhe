@@ -17,6 +17,8 @@ function test($str) {
     $len = str_pad($len, 10, "0", STR_PAD_LEFT);
 	if($argv[1] == 2) {
 		$str = $len ."01". $str;
+	} else if($argv[1] == 3) {
+		$str = $len ."02". $str;
 	} else {
 		$str = $len ."00". $str;
 	}
@@ -47,8 +49,10 @@ function test($str) {
 
     $error = $err[$code];
 
-    if(OUTPUT)
-    echo '返回状态：' . $error . "\n";
+    if(OUTPUT) {
+		echo '返回状态：' . $error . "\n";
+		echo $s;
+	}
     if ($code == 200) {
         $s = substr($s, 3);
         $list = explode("\n", $s);
@@ -94,6 +98,6 @@ for($i=0;$i<10000;$i++) {
     test("日 日 毛泽东 av 日日共产党 xxx CC小雪M<(*&*&%&^%$%^$@#$%^)_+_+\"3424");
 }
 
-echo "失败:".$faild.' 耗时'.$totalCost."\n";
+echo "请求：$i 失败:".$faild.' 耗时'.$totalCost."\n";
 
 

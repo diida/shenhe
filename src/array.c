@@ -1,8 +1,13 @@
 #include <stdio.h>
+#include <pthread.h>
 #include "zmalloc.h"
 #include "array.h"
-void arrayPush(ARRAY *arr,ANODE *node)
+void arrayPush(ARRAY *arr,ANODE *node,pthread_mutex_t *lock)
 {
+	if(lock != NULL) {
+		pthread_mutex_lock(lock);
+	}
+
     node->next = NULL;
     if(arr->end == NULL) {
         arr->head = node;
@@ -13,11 +18,19 @@ void arrayPush(ARRAY *arr,ANODE *node)
     }
     arr->end = node;
     arr->length++;
+	if(lock != NULL) {
+		pthread_mutex_unlock(lock);
+	}
 }
 
-ANODE *arrayPop(ARRAY *arr)
+ANODE *arrayPop(ARRAY *arr,pthread_mutex_t *lock)
 {
-    ANODE *a;
+    ANODE *a = NULL;
+
+	if(lock != NULL) {
+		pthread_mutex_lock(lock);
+	}
+
     if(arr->length > 0) {
         a = arr->end;
         arr->end = arr->end->prev;
@@ -27,13 +40,20 @@ ANODE *arrayPop(ARRAY *arr)
             arr->head = NULL;
         }
         arr->length--;
-        return a;
     }	
-    return NULL;
+
+	if(lock != NULL) {
+		pthread_mutex_unlock(lock);
+	}
+    return a;
 }
 
-void arrayUnshift(ARRAY *arr,ANODE *node)
+void arrayUnshift(ARRAY *arr,ANODE *node,pthread_mutex_t *lock)
 {
+	if(lock != NULL) {
+		pthread_mutex_lock(lock);
+	}
+
     node->next = arr->head;
     node->prev = NULL;
     if(arr->head == NULL) {
@@ -43,11 +63,18 @@ void arrayUnshift(ARRAY *arr,ANODE *node)
         arr->head = node;
     }
     arr->length++;
+
+	if(lock != NULL) {
+		pthread_mutex_unlock(lock);
+	}
 }
 
-ANODE *arrayShift(ARRAY *arr)
+ANODE *arrayShift(ARRAY *arr,pthread_mutex_t *lock)
 {
-    ANODE *a;
+    ANODE *a = NULL;
+	if(lock != NULL) {
+		pthread_mutex_lock(lock);
+	}
     if(arr->length > 0) {
         a = arr->head;
         arr->head = a->next;
@@ -57,28 +84,31 @@ ANODE *arrayShift(ARRAY *arr)
             arr->head->prev = NULL;
         }
         arr->length--;
-        return a;
     }
-    return NULL;
+	
+	if(lock != NULL) {
+		pthread_mutex_unlock(lock);
+	}
+    return a;
 }
 
 ARRAY * arrayCreate()
 {
-		ARRAY *arr = zmalloc(sizeof(ARRAY));
-		arr->length = 0;
-		arr->head = arr->end = NULL;
-		return arr;
-	}
+	ARRAY *arr = zmalloc(sizeof(ARRAY));
+	arr->length = 0;
+	arr->head = arr->end = NULL;
+	return arr;
+}
 
-	ANODE *arrayNodeCreate(int val,void *data)
-	{
-		ANODE *n= zmalloc(sizeof(struct array_node));    
-		n->val = val;
-		n->data = data;
-		return n;
-	}
+ANODE *arrayNodeCreate(int val,void *data)
+{
+	ANODE *n= zmalloc(sizeof(struct array_node));    
+	n->val = val;
+	n->data = data;
+	return n;
+}
 
-	/*
+/*
 	typedef struct t{
 		int c;
 	} T;
